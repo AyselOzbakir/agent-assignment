@@ -17,6 +17,7 @@ from src.models import (
 from src.tools import ToolExecutor
 from src.memory import Memory
 from src.prompts import Prompts
+from src.llm_parser import parse_request_with_llm
 
 
 class Agent:
@@ -92,8 +93,37 @@ class Agent:
             clarifying_questions=[],
         )
 
+    def _classify_intent_with_llm(self, user_input: str) -> Intent:
+        """Try to classify intent with OpenAI. Fall back safely if unavailable."""
+        try:
+            parsed = parse_request_with_llm(user_input)
+
+            if not parsed.get("used_llm"):
+                return Intent.UNKNOWN
+
+            intent_value = parsed.get("intent", "unknown")
+
+            intent_map = {
+                "coworking_search": Intent.COWORKING_SEARCH,
+                "appointment_booking": Intent.APPOINTMENT_BOOKING,
+                "meeting_scheduling": Intent.MEETING_SCHEDULING,
+                "reminder": Intent.REMINDER,
+                "search": Intent.SEARCH,
+                "unknown": Intent.UNKNOWN,
+            }
+
+            return intent_map.get(intent_value, Intent.UNKNOWN)
+
+        except Exception:
+            return Intent.UNKNOWN
+
     def _classify_intent(self, user_input: str) -> Intent:
-        """Classify the user's intent."""
+        """Classify the user's intent using OpenAI first, then rule-based fallback."""
+        llm_intent = self._classify_intent_with_llm(user_input)
+
+        if llm_intent != Intent.UNKNOWN:
+            return llm_intent
+
         text = user_input.lower()
 
         if any(word in text for word in ["dentist", "dental", "appointment", "doctor"]):
