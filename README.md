@@ -37,6 +37,12 @@ The current implementation supports:
 - Scheduling meetings
 - Creating reminders
 
+## LLM Integration
+
+The main CLI flow uses deterministic routing for reliability and easy evaluation. The project also includes an optional OpenAI-backed parser scaffold in `src/llm_parser.py`.
+
+This allows the rule-based intent classification step to be replaced or augmented with an LLM parser when `OPENAI_API_KEY` is configured.
+
 ## Required Tools
 
 The assignment required the following tools. They are implemented as deterministic mock tools:
