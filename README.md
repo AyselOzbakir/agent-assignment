@@ -188,6 +188,32 @@ uv run streamlit run streamlit_app.py
 
 This opens a local browser-based interface for interacting with the agent.
 
+## Additional Example Prompts
+
+The agent can also handle variations of the core workflows, such as:
+
+```text
+Look for workspaces in Warsaw with WiFi and coffee.
+```
+
+```text
+I need a dental appointment in Istanbul next week after 4pm.
+```
+
+```text
+Schedule a meeting with Aysel next Friday morning.
+```
+
+```text
+Help me plan a weekend trip to Prague with a €300 budget.
+```
+
+```text
+Remind me tomorrow to prepare my interview notes.
+```
+
+Unsupported or out-of-scope requests may return a blocker instead of fabricated results, because the project uses a small mock dataset for reliable evaluation.
+
 ## Non-Interactive Test Commands
 
 Coworking search:
