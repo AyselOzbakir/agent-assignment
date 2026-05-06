@@ -5,6 +5,8 @@ Orchestrates the agent workflow: understanding requests, identifying intent,
 breaking down tasks, executing tools, and providing summaries.
 """
 
+import re
+
 from src.models import (
     Intent,
     UserRequest,
@@ -126,20 +128,20 @@ class Agent:
 
         text = user_input.lower()
 
+        if any(word in text for word in ["remind", "reminder", "don't forget"]):
+            return Intent.REMINDER
+
         if any(word in text for word in ["dentist", "dental", "appointment", "doctor"]):
             return Intent.APPOINTMENT_BOOKING
 
-        if any(
-            word in text
-            for word in ["coworking", "workspace", "co-working", "office space"]
-        ):
+        if any(word in text for word in ["coworking", "workspace", "co-working", "office space"]):
             return Intent.COWORKING_SEARCH
 
         if any(word in text for word in ["meeting", "schedule", "calendar"]):
             return Intent.MEETING_SCHEDULING
 
-        if any(word in text for word in ["remind", "reminder", "don't forget"]):
-            return Intent.REMINDER
+        if any(word in text for word in ["trip", "travel", "plan", "prague", "paris", "london", "vacation"]):
+            return Intent.TRIP_PLANNING
 
         if any(word in text for word in ["find", "search", "look for", "recommend"]):
             return Intent.SEARCH
@@ -197,14 +199,7 @@ class Agent:
         questions = []
 
         known_cities = [
-            "warsaw",
-            "istanbul",
-            "bursa",
-            "ankara",
-            "london",
-            "berlin",
-            "paris",
-            "prague",
+            "warsaw", "istanbul", "bursa", "ankara", "london", "berlin", "paris", "prague",
         ]
 
         if intent == Intent.APPOINTMENT_BOOKING:
@@ -220,22 +215,9 @@ class Agent:
             has_time = any(
                 word in text
                 for word in [
-                    "tomorrow",
-                    "tonight",
-                    "today",
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                    "friday",
-                    "saturday",
-                    "sunday",
-                    "week",
-                    "at ",
-                    "pm",
-                    "am",
-                    "after",
-                    "before",
+                    "tomorrow", "tonight", "today", "monday", "tuesday",
+                    "wednesday", "thursday", "friday", "saturday", "sunday",
+                    "week", "at ", "pm", "am", "after", "before",
                 ]
             )
 
@@ -252,24 +234,29 @@ class Agent:
             if not has_city:
                 questions.append("Which city are you looking for coworking spaces in?")
 
+        elif intent == Intent.TRIP_PLANNING:
+            has_location = (
+                any(city in text for city in known_cities)
+                or any(word in text for word in ["prague", "paris", "istanbul", "destination"])
+                or bool(re.search(r'\bto\s+[a-zA-Z]+\b', text))
+            )
+            has_duration = any(word in text for word in ["day", "week", "night", "days", "nights"])
+            has_budget = "€" in text or "$" in text or "under" in text or "budget" in text
+
+            if not has_location:
+                questions.append("Where do you want to travel?")
+            if not has_duration:
+                questions.append("How many days/nights will your trip be?")
+            if not has_budget:
+                questions.append("What is your budget for this trip?")
+
         elif intent == Intent.MEETING_SCHEDULING:
             has_time = any(
                 word in text
                 for word in [
-                    "today",
-                    "tomorrow",
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                    "friday",
-                    "week",
-                    "month",
-                    "at ",
-                    "pm",
-                    "am",
-                    "afternoon",
-                    "morning",
+                    "today", "tomorrow", "monday", "tuesday", "wednesday",
+                    "thursday", "friday", "week", "month", "at ", "pm",
+                    "am", "afternoon", "morning",
                 ]
             )
 
@@ -277,6 +264,18 @@ class Agent:
                 questions.append("What date and time would you prefer for the meeting?")
 
         return questions
+
+    def _extract_city(self, user_input: str) -> str:
+        """Extract city from user input."""
+        known_cities = ["warsaw", "istanbul", "ankara", "berlin", "london", "prague", "paris", "bursa"]
+        text = user_input.lower()
+        for city in known_cities:
+            if city in text:
+                return city.capitalize()
+        match = re.search(r'\bin\s+([a-zA-Z]+)\b', text)
+        if match:
+            return match.group(1).capitalize()
+        return "Warsaw"
 
     def _break_down_tasks(self, user_input: str, intent: Intent) -> list[str]:
         """Break down a request into subtasks."""
@@ -306,6 +305,15 @@ class Agent:
                 "Create a meeting reminder",
             ]
 
+        if intent == Intent.TRIP_PLANNING:
+            return [
+                "Identify destination and travel dates",
+                "Search for accommodation options",
+                "Search for transportation options",
+                "Check budget constraints and validate total cost",
+                "Present findings with cost breakdown",
+            ]
+
         if intent == Intent.SEARCH:
             return [
                 "Identify what the user is searching for",
@@ -325,16 +333,16 @@ class Agent:
         """Plan which tools to call based on the request."""
         tool_calls = []
         text = user_input.lower()
+        city = self._extract_city(user_input)
 
         if "dentist" in text or "dental" in text or "appointment" in text:
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.SEARCH_SERVICE,
-                    params={"query": "dentist appointment"},
+                    params={"query": "dentist appointment", "city": city},
                     description="Search for dentist providers",
                 )
             )
-
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.CALENDAR_CHECK,
@@ -342,7 +350,6 @@ class Agent:
                     description="Check appointment availability",
                 )
             )
-
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.BOOKING_SERVICE,
@@ -350,7 +357,6 @@ class Agent:
                     description="Book appointment",
                 )
             )
-
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.REMINDER_CREATE,
@@ -363,8 +369,38 @@ class Agent:
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.SEARCH_SERVICE,
-                    params={"query": user_input},
+                    params={"query": user_input, "city": city},
                     description="Search for coworking spaces",
+                )
+            )
+
+        elif "trip" in text or "travel" in text or "plan" in text or "vacation" in text:
+            tool_calls.append(
+                ToolCall(
+                    tool=ToolName.SEARCH_SERVICE,
+                    params={"query": "hotels " + user_input, "city": city},
+                    description="Search for accommodation options",
+                )
+            )
+            tool_calls.append(
+                ToolCall(
+                    tool=ToolName.SEARCH_SERVICE,
+                    params={"query": "flights " + user_input, "city": city},
+                    description="Search for transportation options",
+                )
+            )
+            tool_calls.append(
+                ToolCall(
+                    tool=ToolName.BUDGET_CHECK,
+                    params={"request": user_input},
+                    description="Validate budget constraints and calculate total cost",
+                )
+            )
+            tool_calls.append(
+                ToolCall(
+                    tool=ToolName.REMINDER_CREATE,
+                    params={"details": f"Trip planned - {user_input}"},
+                    description="Create trip reminder",
                 )
             )
 
@@ -376,7 +412,6 @@ class Agent:
                     description="Check meeting availability",
                 )
             )
-
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.REMINDER_CREATE,
@@ -398,7 +433,7 @@ class Agent:
             tool_calls.append(
                 ToolCall(
                     tool=ToolName.SEARCH_SERVICE,
-                    params={"query": user_input},
+                    params={"query": user_input, "city": city},
                     description="Search for information",
                 )
             )

@@ -17,6 +17,7 @@ class Intent(str, Enum):
     COWORKING_SEARCH = "coworking_search"
     APPOINTMENT_BOOKING = "appointment_booking"
     MEETING_SCHEDULING = "meeting_scheduling"
+    TRIP_PLANNING = "trip_planning"
     SEARCH = "search"
     REMINDER = "reminder"
     UNKNOWN = "unknown"
@@ -29,6 +30,7 @@ class ToolName(str, Enum):
     SEARCH_SERVICE = "search_service"
     BOOKING_SERVICE = "booking_service"
     REMINDER_CREATE = "reminder_create"
+    BUDGET_CHECK = "budget_check"
 
 
 @dataclass
