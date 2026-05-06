@@ -13,6 +13,7 @@ The project includes both a CLI interface and a Streamlit web UI.
 - Clarifying questions
 - Multi-turn context handling
 - Mock tool orchestration
+- Missing information handling
 - Failure and blocker reporting
 - Structured final summaries
 - CLI interface
@@ -44,7 +45,7 @@ The project also includes an additional mock tool:
 
 - `budget_check(request)`
 
-This is used for trip-planning requests with budget constraints.
+This tool is used for trip-planning requests with budget constraints.
 
 ## LLM Integration
 
@@ -73,9 +74,9 @@ Live restaurant, travel, calendar, or place data would require separate third-pa
 
 Input:
 
-\`\`\`text
+```text
 Find me 3 coworking spaces in Warsaw under $20/day.
-\`\`\`
+```
 
 Expected behavior:
 
@@ -88,21 +89,21 @@ Expected behavior:
 
 Input:
 
-\`\`\`text
+```text
 Book me a dentist appointment next week after 5pm.
-\`\`\`
+```
 
 The agent asks:
 
-\`\`\`text
+```text
 What city are you in?
-\`\`\`
+```
 
 User clarification:
 
-\`\`\`text
-warsaw
-\`\`\`
+```text
+Warsaw
+```
 
 Expected behavior:
 
@@ -118,9 +119,9 @@ Expected behavior:
 
 Input:
 
-\`\`\`text
+```text
 Schedule a meeting with John next Tuesday afternoon.
-\`\`\`
+```
 
 Expected behavior:
 
@@ -133,9 +134,9 @@ Expected behavior:
 
 Input:
 
-\`\`\`text
+```text
 Plan a 2-day trip to Prague under €300.
-\`\`\`
+```
 
 Expected behavior:
 
@@ -148,42 +149,42 @@ Expected behavior:
 
 Example budget result:
 
-\`\`\`text
+```text
 Budget limit: €300
 Estimated total: €230
 Fits budget: Yes
 Accommodation: €160
 Transportation: €70
 Contingency: €50
-\`\`\`
+```
 
 ## Setup
 
 Install dependencies with `uv`:
 
-\`\`\`bash
+```bash
 uv sync
-\`\`\`
+```
 
 ## Run the CLI
 
-\`\`\`bash
+```bash
 uv run python main.py
-\`\`\`
+```
 
 Then type a request into the CLI.
 
 To exit:
 
-\`\`\`text
+```text
 quit
-\`\`\`
+```
 
 ## Run the Streamlit UI
 
-\`\`\`bash
+```bash
 uv run streamlit run streamlit_app.py
-\`\`\`
+```
 
 This opens a local browser-based interface for interacting with the agent.
 
@@ -191,31 +192,31 @@ This opens a local browser-based interface for interacting with the agent.
 
 Coworking search:
 
-\`\`\`bash
+```bash
 printf "Find me 3 coworking spaces in Warsaw under \$20/day.\nquit\n" | uv run python main.py
-\`\`\`
+```
 
 Dentist appointment booking with clarification:
 
-\`\`\`bash
-printf "Book me a dentist appointment next week after 5pm.\nwarsaw\nquit\n" | uv run python main.py
-\`\`\`
+```bash
+printf "Book me a dentist appointment next week after 5pm.\nWarsaw\nquit\n" | uv run python main.py
+```
 
 Meeting scheduling:
 
-\`\`\`bash
+```bash
 printf "Schedule a meeting with John next Tuesday afternoon.\nquit\n" | uv run python main.py
-\`\`\`
+```
 
 Trip planning:
 
-\`\`\`bash
+```bash
 printf "Plan a 2-day trip to Prague under €300.\nquit\n" | uv run python main.py
-\`\`\`
+```
 
 ## Project Structure
 
-\`\`\`text
+```text
 agent-assignment/
 ├── main.py
 ├── streamlit_app.py
@@ -232,7 +233,7 @@ agent-assignment/
     ├── models.py
     ├── prompts.py
     └── tools.py
-\`\`\`
+```
 
 ## Design Notes
 
